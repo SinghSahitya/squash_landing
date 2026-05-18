@@ -829,9 +829,9 @@ function ReducedMotionDesktop() {
       >
         Squash solves the{" "}
         <span className="italic text-[color:var(--color-primary)]">
-          attention
+          attention problem,
         </span>{" "}
-        Problem, not the data problem.
+        not the data problem.
       </p>
     </div>
   );
@@ -939,9 +939,9 @@ function MobileLayout({ reduce }: { reduce: boolean }) {
         >
           Squash solves the{" "}
           <span className="italic text-[color:var(--color-primary)]">
-            attention
+            attention problem,
           </span>{" "}
-          Problem, not the data problem.
+          not the data problem.
         </motion.p>
       </div>
     </div>

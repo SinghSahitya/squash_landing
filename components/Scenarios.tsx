@@ -15,7 +15,7 @@ export function Scenarios() {
     <section
       id="scenarios"
       aria-labelledby="scenarios-heading"
-      className="py-16 sm:py-20 md:py-32 bg-[color:var(--color-surface)] border-y border-[color:var(--color-border)]"
+      className="py-16 sm:py-20 md:py-32 bg-[color:var(--color-background)]"
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="max-w-3xl">

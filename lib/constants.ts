@@ -10,7 +10,7 @@ export const FOUNDER_EMAIL = "rithen@heysquash.com";
 
 export const NAV_LINKS = [
   { label: "How it works", href: "#how-it-works" },
-  { label: "Product", href: "#product" },
+  { label: "Ask Squash", href: "#ask-squash" },
   { label: "Integrations", href: "#integrations" },
   { label: "FAQ", href: "#faq" },
 ];

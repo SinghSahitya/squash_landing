@@ -46,7 +46,7 @@ export function ShowcaseInvestigate() {
   return (
     <section
       aria-labelledby="investigate-heading"
-      className="py-16 sm:py-20 md:py-32 bg-[color:var(--color-surface)] border-y border-[color:var(--color-border)] overflow-hidden"
+      className="py-16 sm:py-20 md:py-32 bg-[color:var(--color-background)] overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="max-w-3xl">
