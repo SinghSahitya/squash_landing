@@ -1,66 +1,50 @@
-import { SOLUTION_PILLARS } from "@/lib/constants";
+"use client";
 
-// Four-pillar solution. Alternates text/visual for rhythm. Each pillar
-// has an eyebrow verb (Synthesize, Analyze, Detect, Ship) that lines up
-// with a specific PM workflow. Visuals are inline SVG — zero JS cost.
+import { motion, useReducedMotion } from "framer-motion";
+import { SOLUTION_STEPS, INTEGRATIONS } from "@/lib/constants";
+import { IntegrationMark } from "./ui/IntegrationMark";
+
+// Solution flywheel. Three steps from the deck: Monitor → Investigate →
+// Suggest. The hero visual is a hub-and-spoke that draws signals IN from
+// the customer's existing tools and pushes actions OUT to the systems
+// teams work in (Linear, Slack, GitHub). Below it, three numbered cards
+// expand on each step with the concrete bullets a buyer wants.
 export function Solution() {
   return (
     <section
-      id="solution"
+      id="how-it-works"
       aria-labelledby="solution-heading"
       className="py-16 sm:py-20 md:py-32 bg-[color:var(--color-surface)] border-y border-[color:var(--color-border)]"
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="max-w-3xl">
           <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-primary)]">
-            The solution
+            How Squash works
           </p>
           <h2
             id="solution-heading"
             className="mt-3 text-[30px] sm:text-[36px] md:text-[48px] leading-[1.1] tracking-[-0.02em] text-[color:var(--color-foreground)]"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            One chat. Your whole product stack.
-            <span className="text-[color:var(--color-foreground-muted)]"> Real answers from real data.</span>
+            AI that <span className="italic text-[color:var(--color-primary)]">monitors everything</span>,
+            investigates across tools,{" "}
+            <span className="italic text-[color:var(--color-primary)]">and tells you what to do next.</span>
           </h2>
-          <p className="mt-4 text-[15px] sm:text-[16px] leading-relaxed text-[color:var(--color-foreground-secondary)] max-w-2xl">
-            Squash is a Cursor-like interface for Product Managers. Ask
-            anything, from "fetch insights last week's tickets" to "draft the PRD for
-            the refund retry flow", and Squash does the work across every tool
-            you already use.
+          <p className="mt-5 text-[15px] sm:text-[16px] leading-relaxed text-[color:var(--color-foreground-secondary)] max-w-2xl">
+            Squash plugs into the tools your team already uses. It runs in the
+            background, investigates anomalies the moment they surface, and
+            pushes you the answer, already drafted and already cited, into the
+            place your team works.
           </p>
         </div>
 
-        <div className="mt-10 sm:mt-12 md:mt-14 grid md:grid-cols-2 gap-4 sm:gap-5">
-          {SOLUTION_PILLARS.map((pillar, i) => (
-            <article
-              key={pillar.eyebrow}
-              id={pillar.href.slice(1)}
-              className="card-hover p-6 sm:p-7 rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-background-tertiary)] flex flex-col"
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-semibold text-[color:var(--color-foreground-muted)]">
-                  0{i + 1}
-                </span>
-                <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[color:var(--color-primary)]">
-                  {pillar.eyebrow}
-                </span>
-              </div>
-              <h3
-                className="mt-4 text-[22px] sm:text-[24px] leading-[1.15] tracking-[-0.01em] text-[color:var(--color-foreground)]"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                {pillar.title}
-              </h3>
-              <p className="mt-3 text-[14px] sm:text-[14.5px] leading-relaxed text-[color:var(--color-foreground-secondary)] flex-1">
-                {pillar.body}
-              </p>
+        {/* Flywheel hub */}
+        <FlywheelVisual />
 
-              {/* Tiny illustration per pillar */}
-              <div className="mt-5 sm:mt-6 rounded-lg border border-[color:var(--color-border)] bg-white p-3.5 sm:p-4 overflow-hidden">
-                <PillarVisual index={i} />
-              </div>
-            </article>
+        {/* Three step cards */}
+        <div className="mt-12 md:mt-16 grid md:grid-cols-3 gap-4 sm:gap-5">
+          {SOLUTION_STEPS.map((step, i) => (
+            <StepCard key={step.step} step={step} index={i} />
           ))}
         </div>
       </div>
@@ -68,291 +52,285 @@ export function Solution() {
   );
 }
 
-// Four mini-visuals, one per pillar. Each is a focused representation of
-// the concrete output a PM would see in that workflow — framed like a
-// product artifact (dashboard row, chart, alert, draft) rather than
-// an abstract decoration.
-function PillarVisual({ index }: { index: number }) {
-  if (index === 0) return <SynthesizeVisual />;
-  if (index === 1) return <AnalyzeVisual />;
-  if (index === 2) return <DetectVisual />;
-  return <ShipVisual />;
-}
+// ─────────────────────────────────────────────────────────────
+// Flywheel — sources flow IN to Squash, actions flow OUT
+// ─────────────────────────────────────────────────────────────
+const SOURCES = ["Mixpanel", "Hotjar", "Zendesk", "Sentry"];
+const ACTIONS = ["Linear", "Slack", "GitHub"];
 
-// Source-color map so provenance dots read as "this theme came from
-// multiple tools" without needing a legend.
-const SRC = {
-  zendesk: "#03363D",
-  intercom: "#1F8DED",
-  salesforce: "#00A1E0",
-  mixpanel: "#7856FF",
-  posthog: "#1D4AFF",
-} as const;
+function FlywheelVisual() {
+  const reduce = useReducedMotion();
 
-function SourceDots({ colors }: { colors: string[] }) {
+  // Hub at (500, 200) on a 1000x400 canvas.
+  // Sources on the left, actions on the right.
+  const hub = { x: 500, y: 200 };
+  const sourcePoints = SOURCES.map((_, i) => ({
+    x: 120,
+    y: 80 + i * 80,
+  }));
+  const actionPoints = ACTIONS.map((_, i) => ({
+    x: 880,
+    y: 110 + i * 90,
+  }));
+
   return (
-    <div className="flex -space-x-1" aria-hidden="true">
-      {colors.map((c, i) => (
-        <span
-          key={i}
-          className="w-3 h-3 rounded-full ring-2 ring-white"
-          style={{ backgroundColor: c }}
-        />
-      ))}
-    </div>
-  );
-}
-
-function SynthesizeVisual() {
-  const themes = [
-    {
-      label: "Checkout crash on Android 14",
-      count: 142,
-      pct: 92,
-      sources: [SRC.zendesk, SRC.intercom, SRC.posthog],
-      delta: "+34%",
-      up: true,
-    },
-    {
-      label: "Promo code drops on retry",
-      count: 78,
-      pct: 52,
-      sources: [SRC.zendesk, SRC.mixpanel],
-      delta: "+12%",
-      up: true,
-    },
-    {
-      label: "Refund stuck > 72h",
-      count: 41,
-      pct: 28,
-      sources: [SRC.intercom, SRC.salesforce],
-      delta: "−6%",
-      up: false,
-    },
-  ];
-  return (
-    <div>
-      <div className="flex items-center justify-between pb-2 border-b border-[color:var(--color-border-light)]">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[color:var(--color-foreground-muted)]">
-          Top themes · last 7 days
-        </p>
-        <span className="text-[10px] font-mono text-[color:var(--color-foreground-muted)] tabular-nums">
-          261 tickets
-        </span>
-      </div>
-      <div className="mt-2.5 space-y-2">
-        {themes.map((t) => (
-          <div key={t.label} className="flex items-center gap-2">
-            <span className="text-[11px] text-[color:var(--color-foreground-secondary)] flex-1 truncate">
-              {t.label}
-            </span>
-            <SourceDots colors={t.sources} />
-            <span
-              className={`text-[10px] font-mono tabular-nums w-9 text-right ${
-                t.up
-                  ? "text-[color:var(--color-foreground-muted)]"
-                  : "text-[color:var(--color-success)]"
-              }`}
-            >
-              {t.delta}
-            </span>
-            <div className="w-14 h-1.5 rounded-full bg-[color:var(--color-background-secondary)] overflow-hidden">
-              <div
-                className="h-full bg-[color:var(--color-primary)]"
-                style={{ width: `${t.pct}%` }}
-              />
-            </div>
-            <span className="text-[10px] font-mono tabular-nums text-[color:var(--color-foreground)] w-7 text-right">
-              {t.count}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function AnalyzeVisual() {
-  const channels = [
-    { label: "Organic", pct: 18.2, width: 88 },
-    { label: "Paid", pct: 12.4, width: 60 },
-    { label: "Referral", pct: 8.1, width: 39 },
-    { label: "Direct", pct: 5.7, width: 27 },
-  ];
-  return (
-    <div className="space-y-2.5">
-      <div className="flex items-center gap-1.5">
-        <span className="text-[11px] font-mono text-[color:var(--color-primary)]">&gt;</span>
-        <p className="text-[11px] font-mono text-[color:var(--color-foreground)] truncate">
-          conversion by channel · 30d · android
-        </p>
-      </div>
-      <div className="space-y-1.5">
-        {channels.map((c) => (
-          <div key={c.label} className="flex items-center gap-2">
-            <span className="text-[10px] text-[color:var(--color-foreground-secondary)] w-14 shrink-0">
-              {c.label}
-            </span>
-            <div className="flex-1 h-2 rounded-full bg-[color:var(--color-background-secondary)] overflow-hidden">
-              <div
-                className="h-full bg-[color:var(--color-primary)] rounded-full"
-                style={{ width: `${c.width}%` }}
-              />
-            </div>
-            <span className="text-[10px] font-mono tabular-nums text-[color:var(--color-foreground)] w-10 text-right">
-              {c.pct}%
-            </span>
-          </div>
-        ))}
-      </div>
-      <div className="flex items-center justify-between pt-2 border-t border-[color:var(--color-border-light)]">
-        <div className="flex items-center gap-1.5 text-[10px] text-[color:var(--color-success)]">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-          ran in 1.4s
-        </div>
-        <span className="text-[10px] font-mono text-[color:var(--color-foreground-muted)]">
-          bigquery · 18,402 rows
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function DetectVisual() {
-  return (
-    <div className="space-y-2.5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <span className="relative flex w-1.5 h-1.5" aria-hidden="true">
-            <span className="absolute inline-flex w-full h-full rounded-full bg-[color:var(--color-error)] opacity-60 animate-ping" />
-            <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-[color:var(--color-error)]" />
-          </span>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[color:var(--color-foreground-muted)]">
-            Live · rage clicks · 60m
-          </p>
-        </div>
-        <span className="text-[10px] font-mono tabular-nums text-[color:var(--color-error)]">
-          +312% vs avg
-        </span>
-      </div>
-      <svg
-        viewBox="0 0 160 34"
-        className="w-full h-8"
-        preserveAspectRatio="none"
-        aria-hidden="true"
-      >
-        <defs>
-          <linearGradient id="detect-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#f44336" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="#f44336" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path
-          d="M0,28 L10,27 L20,26 L30,28 L40,25 L50,26 L60,24 L70,22 L80,23 L90,19 L100,16 L110,13 L120,9 L130,5 L140,3 L150,2 L160,4 L160,34 L0,34 Z"
-          fill="url(#detect-grad)"
-        />
-        <path
-          d="M0,28 L10,27 L20,26 L30,28 L40,25 L50,26 L60,24 L70,22 L80,23 L90,19 L100,16 L110,13 L120,9 L130,5 L140,3 L150,2 L160,4"
-          fill="none"
-          stroke="#f44336"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <circle cx="150" cy="2" r="2" fill="#f44336" />
-      </svg>
-      <div className="flex items-start gap-2 p-2 rounded-md bg-[color:var(--color-error-subtle)] border border-[color:var(--color-border-light)]">
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#f44336"
-          strokeWidth="2.5"
-          aria-hidden="true"
-          className="mt-0.5 flex-shrink-0"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="8" x2="12" y2="12" />
-          <line x1="12" y1="16" x2="12.01" y2="16" />
-        </svg>
-        <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-semibold text-[color:var(--color-foreground)]">
-            Rage clicks spiking on Pay button
-          </p>
-          <p className="text-[10px] text-[color:var(--color-foreground-muted)] mt-0.5">
-            #payments-oncall · 4m ago · 38 sessions
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ShipVisual() {
-  const sections = [
-    { label: "Problem", done: true },
-    { label: "User impact", done: true },
-    { label: "Proposed fix", done: true },
-    { label: "Acceptance criteria", done: false },
-  ];
-  return (
-    <div className="space-y-2.5">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] font-semibold text-[color:var(--color-foreground)] truncate">
-          PRD · Android 14 payment crash
-        </p>
-        <span className="text-[9px] font-semibold uppercase tracking-[0.08em] px-1.5 py-0.5 rounded bg-[color:var(--color-primary-subtle)] text-[color:var(--color-primary)] border border-[color:var(--color-primary-subtle-border)] shrink-0">
-          Draft
-        </span>
-      </div>
-      <div className="space-y-1">
-        {sections.map((s) => (
-          <div key={s.label} className="flex items-center gap-2">
-            {s.done ? (
-              <div className="w-3 h-3 rounded-full bg-[color:var(--color-primary)] flex items-center justify-center shrink-0">
-                <svg
-                  width="7"
-                  height="7"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="4"
-                  aria-hidden="true"
-                >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              </div>
-            ) : (
-              <div className="w-3 h-3 rounded-full border border-dashed border-[color:var(--color-foreground-muted)] shrink-0" />
-            )}
-            <span
-              className={`text-[11px] ${
-                s.done
-                  ? "text-[color:var(--color-foreground-secondary)]"
-                  : "text-[color:var(--color-foreground-muted)] italic"
-              }`}
-            >
-              {s.label}
-            </span>
-          </div>
-        ))}
-      </div>
-      <div className="flex items-center gap-1.5 pt-2 border-t border-[color:var(--color-border-light)]">
-        <span className="text-[10px] text-[color:var(--color-foreground-muted)] shrink-0">
-          Cites
-        </span>
-        {["T-4821", "S-912", "Q-88"].map((t) => (
-          <span
-            key={t}
-            className="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded bg-[color:var(--color-background-tertiary)] border border-[color:var(--color-border-light)] text-[color:var(--color-foreground-secondary)]"
+    <div className="mt-12 md:mt-16">
+      <div className="relative rounded-2xl border border-[color:var(--color-border)] bg-gradient-to-b from-[color:var(--color-background-tertiary)] to-white overflow-hidden">
+        <div className="relative" style={{ paddingBottom: "40%", minHeight: 320 }}>
+          {/* SVG lines + curves */}
+          <svg
+            className="absolute inset-0 w-full h-full"
+            viewBox="0 0 1000 400"
+            fill="none"
+            aria-hidden="true"
+            preserveAspectRatio="xMidYMid meet"
           >
-            {t}
-          </span>
-        ))}
+            <defs>
+              <linearGradient id="line-in" x1="0" x2="1" y1="0" y2="0">
+                <stop offset="0%" stopColor="#E8640F" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#E8640F" stopOpacity="0.9" />
+              </linearGradient>
+              <linearGradient id="line-out" x1="0" x2="1" y1="0" y2="0">
+                <stop offset="0%" stopColor="#E8640F" stopOpacity="0.9" />
+                <stop offset="100%" stopColor="#E8640F" stopOpacity="0.15" />
+              </linearGradient>
+            </defs>
+
+            {/* Inflow curves */}
+            {sourcePoints.map((p, i) => {
+              const d = `M ${p.x + 40} ${p.y} C ${p.x + 220} ${p.y}, ${hub.x - 220} ${hub.y}, ${hub.x - 60} ${hub.y}`;
+              return (
+                <motion.path
+                  key={`in-${i}`}
+                  d={d}
+                  stroke="url(#line-in)"
+                  strokeWidth="1.6"
+                  fill="none"
+                  initial={reduce ? false : { pathLength: 0, opacity: 0 }}
+                  whileInView={{ pathLength: 1, opacity: 1 }}
+                  viewport={{ once: true, margin: "-80px" }}
+                  transition={{ duration: 1.2, delay: 0.2 + i * 0.1, ease: "easeOut" }}
+                />
+              );
+            })}
+
+            {/* Outflow curves */}
+            {actionPoints.map((p, i) => {
+              const d = `M ${hub.x + 60} ${hub.y} C ${hub.x + 220} ${hub.y}, ${p.x - 220} ${p.y}, ${p.x - 40} ${p.y}`;
+              return (
+                <motion.path
+                  key={`out-${i}`}
+                  d={d}
+                  stroke="url(#line-out)"
+                  strokeWidth="1.6"
+                  fill="none"
+                  initial={reduce ? false : { pathLength: 0, opacity: 0 }}
+                  whileInView={{ pathLength: 1, opacity: 1 }}
+                  viewport={{ once: true, margin: "-80px" }}
+                  transition={{ duration: 1.0, delay: 1.0 + i * 0.12, ease: "easeOut" }}
+                />
+              );
+            })}
+          </svg>
+
+          {/* Source tiles (left) */}
+          {SOURCES.map((name, i) => {
+            const integ = INTEGRATIONS.find((it) => it.name === name);
+            const p = sourcePoints[i];
+            return (
+              <motion.div
+                key={name}
+                initial={reduce ? false : { opacity: 0, x: -16 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, margin: "-80px" }}
+                transition={{ duration: 0.5, delay: 0.05 + i * 0.08 }}
+                className="absolute -translate-y-1/2"
+                style={{
+                  left: `${(p.x / 1000) * 100}%`,
+                  top: `${(p.y / 400) * 100}%`,
+                  transform: "translate(-50%, -50%)",
+                }}
+              >
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-[color:var(--color-border)] shadow-sm">
+                  <IntegrationMark
+                    name={name}
+                    color={integ?.color ?? "#7a7873"}
+                    slug={integ?.slug}
+                    size={20}
+                  />
+                  <span className="text-[12px] font-medium text-[color:var(--color-foreground)] whitespace-nowrap hidden sm:inline">
+                    {name}
+                  </span>
+                </div>
+              </motion.div>
+            );
+          })}
+
+          {/* Action tiles (right) */}
+          {ACTIONS.map((name, i) => {
+            const integ = INTEGRATIONS.find((it) => it.name === name);
+            const p = actionPoints[i];
+            return (
+              <motion.div
+                key={name}
+                initial={reduce ? false : { opacity: 0, x: 16 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, margin: "-80px" }}
+                transition={{ duration: 0.5, delay: 1.2 + i * 0.1 }}
+                className="absolute"
+                style={{
+                  left: `${(p.x / 1000) * 100}%`,
+                  top: `${(p.y / 400) * 100}%`,
+                  transform: "translate(-50%, -50%)",
+                }}
+              >
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-[color:var(--color-border)] shadow-sm">
+                  <IntegrationMark
+                    name={name}
+                    color={integ?.color ?? "#7a7873"}
+                    slug={integ?.slug}
+                    size={20}
+                  />
+                  <span className="text-[12px] font-medium text-[color:var(--color-foreground)] whitespace-nowrap hidden sm:inline">
+                    {name}
+                  </span>
+                </div>
+              </motion.div>
+            );
+          })}
+
+          {/* Central Squash hub */}
+          <motion.div
+            initial={reduce ? false : { opacity: 0, scale: 0.85 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.5, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute"
+            style={{
+              left: `${(hub.x / 1000) * 100}%`,
+              top: `${(hub.y / 400) * 100}%`,
+              transform: "translate(-50%, -50%)",
+            }}
+          >
+            <div className="relative">
+              <span
+                className="absolute -inset-2 rounded-2xl bg-[color:var(--color-primary)]/15 blur-md animate-pulse"
+                aria-hidden="true"
+              />
+              <div className="relative flex items-center gap-2 px-4 py-3 rounded-xl bg-[color:var(--color-primary)] text-white shadow-[0_20px_50px_-20px_rgba(232,100,15,0.6)]">
+                <span className="inline-flex w-6 h-6 rounded-md bg-white/20 items-center justify-center">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="white" aria-hidden="true">
+                    <path d="M12 2 14 9 21 11 14 13 12 20 10 13 3 11 10 9 Z" />
+                  </svg>
+                </span>
+                <div>
+                  <p className="text-[13px] font-semibold leading-tight">Squash</p>
+                  <p className="text-[10px] text-white/80 leading-tight">monitoring · 24/7</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Caption strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 px-4 sm:px-6 py-4 border-t border-[color:var(--color-border)] bg-white/60 text-center">
+          {[
+            ["Monitors", "24/7"],
+            ["Investigates", "across tools"],
+            ["Finds", "root cause"],
+            ["Helps you fix", "in minutes"],
+          ].map(([label, value]) => (
+            <div key={label}>
+              <p className="text-[10px] uppercase tracking-[0.1em] font-semibold text-[color:var(--color-foreground-muted)]">
+                {label}
+              </p>
+              <p className="text-[13px] font-semibold text-[color:var(--color-foreground)] mt-0.5">
+                {value}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Numbered step card
+// ─────────────────────────────────────────────────────────────
+function StepCard({
+  step,
+  index,
+}: {
+  step: (typeof SOLUTION_STEPS)[number];
+  index: number;
+}) {
+  const reduce = useReducedMotion();
+  return (
+    <motion.article
+      initial={reduce ? false : { opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.5, delay: index * 0.1 }}
+      className="card-hover p-6 sm:p-7 rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-background-tertiary)] flex flex-col"
+    >
+      <div className="flex items-center justify-between">
+        <span
+          className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[color:var(--color-primary)] text-white text-[14px] font-semibold"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          {index + 1}
+        </span>
+        <StepIcon kind={step.icon} />
+      </div>
+      <h3
+        className="mt-5 text-[22px] sm:text-[24px] leading-[1.15] tracking-[-0.01em] text-[color:var(--color-foreground)]"
+        style={{ fontFamily: "var(--font-display)" }}
+      >
+        {step.title}
+      </h3>
+      <p className="mt-2.5 text-[14px] leading-relaxed text-[color:var(--color-foreground-secondary)]">
+        {step.body}
+      </p>
+      <ul className="mt-4 space-y-2 flex-1">
+        {step.bullets.map((b) => (
+          <li
+            key={b}
+            className="flex items-start gap-2 text-[13px] text-[color:var(--color-foreground-secondary)] leading-relaxed"
+          >
+            <span
+              className="mt-1.5 inline-block w-1 h-1 rounded-full bg-[color:var(--color-primary)] flex-shrink-0"
+              aria-hidden="true"
+            />
+            <span>{b}</span>
+          </li>
+        ))}
+      </ul>
+    </motion.article>
+  );
+}
+
+function StepIcon({ kind }: { kind: string }) {
+  if (kind === "monitor") {
+    return (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[color:var(--color-primary)]" aria-hidden="true">
+        <circle cx="12" cy="12" r="10" />
+        <circle cx="12" cy="12" r="6" />
+        <circle cx="12" cy="12" r="2" />
+      </svg>
+    );
+  }
+  if (kind === "investigate") {
+    return (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[color:var(--color-primary)]" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" />
+        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[color:var(--color-primary)]" aria-hidden="true">
+      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+    </svg>
   );
 }

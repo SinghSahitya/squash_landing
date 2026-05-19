@@ -1,7 +1,7 @@
 import { INTEGRATIONS } from "@/lib/constants";
 import { IntegrationMark } from "./ui/IntegrationMark";
 
-// Integrations section. Two parts:
+// Integrations. Two parts:
 //   1. Infinite marquee — animated sense of breadth (great for investor pitch)
 //   2. Categorized grid — practical, scannable, SEO-friendly (real names
 //      as plain text help search engines and LLMs index what Squash supports)
@@ -9,7 +9,8 @@ export function Integrations() {
   // Duplicate array for seamless marquee loop
   const marqueeItems = [...INTEGRATIONS, ...INTEGRATIONS];
 
-  // Group by category for the grid below
+  // Group by category — preserve insertion order so categories appear
+  // in the order we defined them in constants.
   const byCategory = INTEGRATIONS.reduce<Record<string, typeof INTEGRATIONS>>(
     (acc, item) => {
       (acc[item.category] ||= []).push(item);
@@ -22,7 +23,7 @@ export function Integrations() {
     <section
       id="integrations"
       aria-labelledby="integrations-heading"
-      className="py-16 sm:py-20 md:py-32 bg-[color:var(--color-surface)] border-y border-[color:var(--color-border)] overflow-hidden"
+      className="py-16 sm:py-20 md:py-32 bg-[color:var(--color-background)] overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="max-w-3xl">
@@ -34,11 +35,16 @@ export function Integrations() {
             className="mt-3 text-[30px] sm:text-[36px] md:text-[48px] leading-[1.1] tracking-[-0.02em] text-[color:var(--color-foreground)]"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            Plugs into every tool a PM already lives in.
+            Works on top of{" "}
+            <span className="italic text-[color:var(--color-primary)]">
+              your existing
+            </span>{" "}
+            product stack.
           </h2>
           <p className="mt-4 text-[15px] sm:text-[16px] leading-relaxed text-[color:var(--color-foreground-secondary)] max-w-2xl">
-            Connect once. Squash pulls signal, writes back decisions, and keeps
-            your system of record clean. Jira stays Jira, Notion stays Notion.
+            No migration. No new stack. No behaviour change for your team.
+            Squash plugs into the tools you already pay for and reasons across
+            them the way no incumbent ever will.
           </p>
         </div>
       </div>
@@ -57,7 +63,7 @@ export function Integrations() {
           {marqueeItems.map((item, i) => (
             <div
               key={`${item.name}-${i}`}
-              className="flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-[color:var(--color-background-tertiary)] border border-[color:var(--color-border)]"
+              className="flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white border border-[color:var(--color-border)]"
             >
               <IntegrationMark name={item.name} color={item.color} slug={item.slug} size={20} />
               <span className="text-[13px] font-medium text-[color:var(--color-foreground)] whitespace-nowrap">
@@ -89,6 +95,10 @@ export function Integrations() {
             </div>
           ))}
         </div>
+
+        <p className="mt-10 text-[13px] text-[color:var(--color-foreground-muted)] text-center">
+          + custom connectors on request · we ship integrations on customer demand
+        </p>
       </div>
     </section>
   );

@@ -1,19 +1,17 @@
 import Link from "next/link";
 import { Logo } from "./ui/Logo";
+import { DEMO_URL, FOUNDER_EMAIL } from "@/lib/constants";
 
 const EXPLORE_LINKS = [
-  { label: "Features", href: "#features" },
-  { label: "Use cases", href: "#use-cases" },
   { label: "How it works", href: "#how-it-works" },
-  { label: "Integrations", href: "#integrations" },
-  { label: "FAQ", href: "#faq" },
+  { label: "Ask Squash", href: "#ask-squash" },
 ];
 
 const CONTACT_LINKS = [
-  { label: "rithen@heysquash.com", href: "mailto:rithen@heysquash.com" },
+  { label: FOUNDER_EMAIL, href: `mailto:${FOUNDER_EMAIL}` },
   {
     label: "Book a demo",
-    href: "https://cal.com/heysquash/squash-onboarding",
+    href: DEMO_URL,
     external: true,
   },
 ];
@@ -27,8 +25,7 @@ export function Footer() {
           <div className="lg:col-span-4">
             <Logo />
             <p className="mt-4 text-[14px] leading-relaxed text-[color:var(--color-foreground-secondary)] max-w-xs">
-              The decision layer for Product Managers. Stop building on gut.
-              Ship what users actually want.
+              Watches your product stack 24/7 so nothing slips past your team.
             </p>
           </div>
 
@@ -79,7 +76,7 @@ export function Footer() {
             © 2026 Squash, Inc. All rights reserved.
           </p>
           <p className="text-[12px] text-[color:var(--color-foreground-muted)]">
-            Built for Product Managers who ship.
+            Built in India.
           </p>
         </div>
       </div>

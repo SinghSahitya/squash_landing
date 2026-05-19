@@ -21,6 +21,10 @@ import {
   siGooglebigquery,
   siAnthropic,
   siGoogleanalytics,
+  siHotjar,
+  siDynatrace,
+  siGithub,
+  siSentry,
 } from "simple-icons";
 
 type SimpleIcon = { hex: string; path: string };
@@ -45,6 +49,10 @@ const SI_ICONS: Record<string, SimpleIcon> = {
   postgresql: siPostgresql,
   anthropic: siAnthropic,
   googleanalytics: siGoogleanalytics,
+  hotjar: siHotjar,
+  dynatrace: siDynatrace,
+  github: siGithub,
+  sentry: siSentry,
 };
 
 // Tier 2: brands removed from simple-icons but with well-known SVG paths
@@ -69,6 +77,11 @@ const BADGE_STYLES: Record<string, { label: string }> = {
   firecrawl: { label: "FC" },
   granola: { label: "GR" },
   signoz: { label: "SZ" },
+  greylabs: { label: "GL" },
+  amplitude: { label: "AM" },
+  heap: { label: "HP" },
+  fullstory: { label: "FS" },
+  vwo: { label: "VW" },
 };
 
 export function IntegrationMark({

@@ -391,7 +391,7 @@ export const USE_CASES: UseCase[] = [
       },
     ],
     summaryText:
-      "4.2k weekly actives (38% of eligible users). Retention lift of +18 pts vs matched control, concentrated in teams of 5–20. Main friction: suggestion latency on long docs (p95 = 4.1s) and unclear admin opt-out. Both scoped as follow-ups.",
+      "4.2k weekly actives (38% of eligible users). Retention lift of +18 pts vs matched control, concentrated in teams of 5-20. Main friction: suggestion latency on long docs (p95 = 4.1s) and unclear admin opt-out. Both scoped as follow-ups.",
     metrics: [
       { label: "Weekly actives", value: "4.2k", delta: "38% adoption", down: false },
       { label: "Retention lift", value: "+18pts", delta: "vs control", down: false },
