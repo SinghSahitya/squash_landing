@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Instrument_Serif, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { FAQS } from "@/lib/constants";
+import { Analytics } from "@vercel/analytics/next";
 
 // ─────────────────────────────────────────────────────────────
 // FONTS — distinctive editorial pairing
@@ -197,7 +198,10 @@ export default function RootLayout({
           password managers, etc.) inject attributes like
           `data-qb-installed` onto <body> before React hydrates, which
           would otherwise trigger a hydration mismatch. */}
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
