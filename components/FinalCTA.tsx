@@ -5,7 +5,7 @@ import { DEMO_URL, FOUNDER_EMAIL } from "@/lib/constants";
 // like a generic SaaS sales pitch.
 export function FinalCTA() {
   return (
-    <section className="relative overflow-hidden py-16 sm:py-20 md:py-32 bg-[color:var(--color-background)]">
+    <section id="get-started" className="relative overflow-hidden py-16 sm:py-20 md:py-32 bg-[color:var(--color-background)]">
       <div className="absolute inset-0 hero-gradient" aria-hidden="true" />
       <div className="absolute inset-0 dot-bg opacity-30" aria-hidden="true" />
 
@@ -48,7 +48,7 @@ export function FinalCTA() {
         </div>
 
         <p className="mt-8 text-[12px] text-[color:var(--color-foreground-muted)]">
-          White-glove onboarding · founders on Slack · zero engineering lift to plug in
+          We handle setup. Founders on Slack. No engineering work needed.
         </p>
       </div>
     </section>

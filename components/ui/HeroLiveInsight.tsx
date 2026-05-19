@@ -207,7 +207,7 @@ function SentryPill() {
     <PillShell
       tool="Sentry"
       meta="Issue · ↑12× spike"
-      oneLiner="TypeError firing on promo apply — 142 events in 72h"
+      oneLiner="TypeError firing on promo apply, 142 events in 72h"
     >
       <div className="rounded-md bg-[#1e1b2e] text-[#e5e3f1] px-2.5 py-2 font-mono text-[9.5px] leading-[1.45]">
         <div>
@@ -260,7 +260,7 @@ function PostHogPill() {
     <PillShell
       tool="PostHog"
       meta="Session replays · 23 sessions"
-      oneLiner="Delay observed at the promo step — users seem confused"
+      oneLiner="Delay observed at the promo step, users seem confused"
     >
       <div className="grid grid-cols-3 gap-1.5">
         {replays.map((r) => (
@@ -576,7 +576,7 @@ const INVESTIGATION_STEPS = [
     time: "08:12 IST",
     type: "scan",
     tools: ["Zendesk"],
-    body: "Scanned 142 new tickets from the last 72h. Identified 34 mentioning promo/coupon failures at checkout — all describe the same pattern.",
+    body: "Scanned 142 new tickets from the last 72h. Identified 34 mentioning promo/coupon failures at checkout. All describe the same pattern.",
   },
   {
     title: "Verified discount not reaching payment",
@@ -590,7 +590,7 @@ const INVESTIGATION_STEPS = [
     time: "08:22 IST",
     type: "check",
     tools: ["BigQuery"],
-    body: "Queried the promotions table — SUMMER25, FLAT15, WELCOME10 are all active, within validity dates. Codes aren't the problem.",
+    body: "Queried the promotions table. SUMMER25, FLAT15, WELCOME10 are all active, within validity dates. Codes aren't the problem.",
   },
   {
     title: "Reviewed 6 session replays",

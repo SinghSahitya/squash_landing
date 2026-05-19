@@ -49,6 +49,8 @@ interface Issue {
     priority: string;
     points: string;
     assignee: string;
+    description: string;
+    labels: string[];
     acceptance: string[];
   };
   slackSummary: string;
@@ -155,269 +157,151 @@ const STEP_ICONS: Record<
    ══════════════════════════════════════════════════════════════ */
 const ISSUES: Issue[] = [
   {
-    id: "sq-001",
-    title: "Conversion drop masked by traffic surge after deploy",
+    id: "sq-003",
+    title: "Size chart mismatch driving 3.4× return rate on apparel",
     severity: "critical",
-    type: "anomaly",
-    typeLabel: "Analytics Anomaly",
-    metric: "−18%",
-    metricLabel: "conversion rate",
-    usersAffected: "14,820",
-    timeAgo: "2h ago",
-    description:
-      "Quote-to-application conversion silently dropped 18% after a front-end deploy. A simultaneous brand campaign masked the decline by driving 30% more top-of-funnel traffic.",
-    investigation: {
-      steps: [
-        {
-          title: "Funnel divergence: conversion rate decoupled from traffic volume",
-          tools: ["Mixpanel"],
-          time: "08:12",
-          stepType: "data",
-          body: "Quote-to-application rate dropped 18% while absolute numbers stayed flat — volume increase from campaign masked the decline.",
-        },
-        {
-          title: "Deploy fe-v2.14.3 moved CTA below fold on mobile",
-          tools: ["GitHub"],
-          time: "08:18",
-          stepType: "scan",
-          body: "Front-end deploy on April 14 changed CTA from a sticky bottom bar to an inline button below the comparison table.",
-        },
-        {
-          title: "34% mobile scroll depth to new CTA position",
-          tools: ["PostHog"],
-          time: "08:24",
-          stepType: "replay",
-          body: "Only 34% of mobile users scroll past the plan comparison table to reach the new inline CTA position.",
-        },
-        {
-          title: "Brand campaign inflated absolute numbers, masking the drop",
-          tools: ["BigQuery"],
-          time: "08:30",
-          stepType: "check",
-          body: "Campaign drove 30% more traffic, keeping absolute application numbers flat and hiding the rate decline.",
-        },
-      ],
-      durationLabel: "4 checks · 4 tools · 18 min",
-      rootCause: "CTA moved below fold on mobile",
-      rootCauseDetail:
-        "Deploy fe-v2.14.3 moved the CTA from a sticky bottom bar to inline below the comparison table. Only 34% of mobile users scroll far enough.",
-    },
-    ticket: {
-      id: "SQ-501",
-      title: "Revert CTA to sticky bottom bar on mobile viewports",
-      priority: "P0",
-      points: "3",
-      assignee: "@akhil",
-      acceptance: [
-        "Sticky CTA restored on mobile viewports < 768px",
-        "A/B test inline placement for desktop separately",
-        "Add conversion-rate alert normalised for traffic volume",
-      ],
-    },
-    slackSummary:
-      "Quote-to-application conversion dropped 18% after fe-v2.14.3 moved CTA below fold on mobile. Brand campaign masked it.",
-  },
-  {
-    id: "sq-002",
-    title: "487 OTP failure tickets from Jio users in UP-East",
-    severity: "high",
     type: "recurring_tickets",
     typeLabel: "Recurring Tickets",
-    metric: "3.2×",
-    metricLabel: "ticket spike",
-    usersAffected: "3,840",
-    timeAgo: "4h ago",
+    metric: "3.4×",
+    metricLabel: "return spike",
+    usersAffected: "45,200",
+    timeAgo: "2h ago",
     description:
-      '"OTP not received" tickets jumped 3.2× over 5 days. 87% trace to Jio users in UP-East — a UIDAI gateway routing issue, not an internal bug.',
+      "\"Wrong size\" return requests jumped 3.4× in 10 days across the apparel category. Sentinel clusters 1,840 return tickets and cross-references with product catalog data, revealing the issue is isolated to 3 new vendors onboarded in April whose size charts use EU sizing but are displayed with IN/US labels. Customers ordering \"M\" receive what is effectively an \"XS\" in Indian sizing. The catalog ingestion pipeline auto-mapped EU sizes to IN labels without conversion, and the QC team didn't catch it because the vendor spreadsheet headers said \"Size\" without specifying the standard.",
     investigation: {
       steps: [
         {
-          title: 'Clustered 487 "OTP not received" tickets from 5 days',
+          title: 'Clustered 1,840 "wrong size" return tickets from 10 days',
           tools: ["Zendesk"],
-          time: "09:05",
+          time: "10:05",
           stepType: "scan",
-          body: "Scanned 5 days of support tickets. 487 OTP failure mentions clustered around the same geographic and carrier pattern.",
+          body: "Scanned 10 days of return requests. 1,840 \"wrong size\" mentions clustered around 3 specific vendor SKUs onboarded in April.",
         },
         {
-          title: "87% of failures isolated to Jio UP-East carrier",
+          title: "Return rate 3.4× higher on 3 new vendor SKUs vs baseline",
           tools: ["Mixpanel", "BigQuery"],
-          time: "09:14",
+          time: "10:14",
           stepType: "data",
-          body: "Cross-referenced device and carrier metadata. 87% of OTP failures trace to Jio users in the UP-East circle.",
+          body: "Cross-referenced return data with vendor catalog. 92% of size-related returns trace to vendors using EU sizing mapped incorrectly to IN labels.",
         },
         {
-          title: "Airtel/Vi/BSNL failure rates normal at 2.9%",
+          title: "EU sizes auto-mapped to IN labels without conversion",
           tools: ["BigQuery"],
-          time: "09:20",
+          time: "10:22",
           stepType: "check",
-          body: "Baseline check: all other carriers across all circles show a normal 2.9% OTP failure rate.",
+          body: "Catalog ingestion pipeline auto-assigned size labels from vendor spreadsheet. EU 38/40/42 mapped directly to S/M/L without conversion factor.",
         },
         {
-          title: "UIDAI gateway routing issue confirmed, not internal",
-          tools: ["Sentry"],
-          time: "09:28",
-          stepType: "check",
-          body: "Root cause is UIDAI SMS gateway routing through Jio UP-East, not an internal service failure.",
-        },
-      ],
-      durationLabel: "4 checks · 4 tools · 23 min",
-      rootCause: "UIDAI SMS gateway routing failure",
-      rootCauseDetail:
-        "Jio's UP-East circle SMS gateway has intermittent UIDAI routing failures. Not an internal bug — but CS lacks this context.",
-    },
-    ticket: {
-      id: "SQ-502",
-      title: "Add DigiLocker fallback for OTP failures on Jio UP-East",
-      priority: "P1",
-      points: "5",
-      assignee: "@priya",
-      acceptance: [
-        'Fallback "Verify via DigiLocker" after 2 failed OTP attempts',
-        "Carrier detection on OTP page for proactive alternate options",
-        "CS scripts updated with carrier-specific context",
-      ],
-    },
-    slackSummary:
-      "487 OTP failure tickets in 5 days. 87% from Jio UP-East — UIDAI gateway issue, not internal. KYC drop-off at 31%.",
-  },
-  {
-    id: "sq-003",
-    title: "Premium calculator price mismatch eroding trust",
-    severity: "high",
-    type: "ui_ux",
-    typeLabel: "UX Issue",
-    metric: "+26pts",
-    metricLabel: "bounce rate gap",
-    usersAffected: "22,450",
-    timeAgo: "6h ago",
-    description:
-      "Calculator shows ₹812/mo but quote page shows ₹943/mo. 328 trust complaints in 2 weeks and a 26pt bounce-rate gap from calculator traffic.",
-    investigation: {
-      steps: [
-        {
-          title: "26pt bounce spike on quote page from calculator traffic",
-          tools: ["Mixpanel"],
-          time: "10:02",
-          stepType: "data",
-          body: "Quote page bounce rate for calculator referral traffic is 41% vs 15% for direct — a 26-point gap.",
-        },
-        {
-          title: "Calculator shows ₹812/mo, quote page shows ₹943/mo",
+          title: "Session replays show users selecting expected sizes confidently",
           tools: ["PostHog"],
-          time: "10:10",
+          time: "10:30",
           stepType: "replay",
-          body: "Compared calculator output to actual quote pricing. ₹131/month difference traced to excluded GST and default rider.",
-        },
-        {
-          title: "Calculator excludes GST (18%) and pre-selected rider",
-          tools: ["BigQuery"],
-          time: "10:18",
-          stepType: "check",
-          body: "Calculator formula last updated Jan 2026. Excludes 18% GST and the pre-selected Accidental Death rider.",
-        },
-        {
-          title: '328 "price mismatch" tickets clustered from 2 weeks',
-          tools: ["Zendesk"],
-          time: "10:26",
-          stepType: "scan",
-          body: "328 Zendesk tickets in 14 days specifically mentioning pricing discrepancy between calculator and quote.",
+          body: "Users select sizes based on displayed IN chart, add to cart without hesitation. They trust the size guide. Issue only surfaces post-delivery.",
         },
       ],
-      durationLabel: "4 checks · 4 tools · 24 min",
-      rootCause: "Calculator excludes GST + default rider",
+      durationLabel: "4 checks · 4 tools · 25 min",
+      rootCause: "EU vendor sizes auto-mapped to IN labels without conversion",
       rootCauseDetail:
-        "Landing page calculator hasn't been synced with the quote engine since Jan 2026. It excludes 18% GST and the pre-selected Accidental Death rider.",
+        "Catalog ingestion pipeline mapped EU 38/40/42 directly to S/M/L Indian sizes. 3 vendors affected, ₹18L in reverse logistics costs in 10 days.",
     },
     ticket: {
       id: "SQ-503",
-      title: "Sync premium calculator with quote engine defaults",
+      title: "Fix size mapping for EU vendors and add conversion validation",
       priority: "P1",
-      points: "3",
-      assignee: "@ritu",
+      points: "5",
+      assignee: "@priya",
+      description:
+        "Catalog ingestion auto-mapped EU 38/40/42 directly to S/M/L without conversion. 3 vendors affected, 1,840 returns in 10 days at ₹18L reverse logistics cost. Fix existing mappings and add validation to prevent recurrence on future vendor onboarding.",
+      labels: ["catalog", "vendor-onboarding", "returns"],
       acceptance: [
-        'Calculator displays "₹943/mo incl. GST" matching quote page',
-        "Tooltip on quote page explains price breakdown for calc traffic",
-        "Pre-selected rider removed from defaults, or included in calc",
+        "Correct size labels for all affected vendor SKUs (EU → IN conversion)",
+        "Add size-standard field to vendor onboarding form (mandatory)",
+        "Catalog ingestion validates size standard before label mapping",
+        "Proactive email to 12,600 affected customers with exchange offer",
       ],
     },
     slackSummary:
-      "Calculator shows ₹812/mo but quote page shows ₹943/mo. 328 trust complaints in 2 weeks. 41% bounce from calculator traffic.",
+      "Size-related returns jumped 3.4× in 10 days. EU vendor sizes auto-mapped to IN labels. 1,840 returns, ₹18L reverse logistics cost.",
   },
   {
     id: "sq-004",
-    title: "Cart abandonment spike after payment timeout increase",
+    title: "Search ranking showing out-of-stock products above available ones",
     severity: "critical",
-    type: "anomaly",
-    typeLabel: "Analytics Anomaly",
-    metric: "−12%",
-    metricLabel: "cart-to-order",
-    usersAffected: "45,200",
-    timeAgo: "8h ago",
+    type: "ui_ux",
+    typeLabel: "UX Issue",
+    metric: "+38%",
+    metricLabel: "search bounce",
+    usersAffected: "34,500",
+    timeAgo: "3h ago",
     description:
-      "Cart-to-order conversion dropped 12% after Razorpay doubled timeout to 30s. Retry rate fell from 52% to 28% — users think the app is frozen.",
+      "Product search results are displaying out-of-stock and discontinued items in the top 5 positions, especially during off-peak inventory hours. Users click through to product pages only to see \"Out of Stock\", creating a 38% bounce-back rate from PDPs accessed via search. The search ranking algorithm uses historical purchase velocity and relevance scoring but doesn't incorporate real-time inventory status. High-selling products retain their top-rank from peak availability periods even after selling out, and the \"Out of Stock\" state only appears on the PDP, not in search result cards.",
     investigation: {
       steps: [
         {
-          title: "Cart-to-order conversion dropped 12% week-over-week",
+          title: "38% bounce-back rate from PDPs accessed via search",
           tools: ["Mixpanel"],
-          time: "11:00",
+          time: "14:02",
           stepType: "data",
-          body: "Week-over-week conversion dropped 12%. Dinner-time orders (7–10 PM) disproportionately affected.",
+          body: "PDP bounce rate for search-referred traffic is 38% vs 12% for category-browsed traffic. A 26-point gap driven by stock unavailability.",
         },
         {
-          title: "Payment timeout changed from 15s to 30s by Razorpay",
-          tools: ["Sentry", "BigQuery"],
-          time: "11:08",
-          stepType: "scan",
-          body: "Razorpay increased server-side timeout from 15s to 30s on April 22. Frontend matches this timeout with no progress indicator.",
-        },
-        {
-          title: "Retry rate after timeout dropped from 52% to 28%",
+          title: "Out-of-stock products occupying top 5 search positions",
           tools: ["PostHog"],
-          time: "11:16",
-          stepType: "data",
-          body: "Users wait 2× longer on failed payments. Retry rate fell from 52% to 28% — most assume the app is frozen.",
+          time: "14:10",
+          stepType: "replay",
+          body: "Session replays show users clicking top results, seeing \"Out of Stock\", returning to search, and repeating 2-3 times before finding available products.",
         },
         {
-          title: '892 "payment stuck" tickets in 1 week',
-          tools: ["Zendesk"],
-          time: "11:22",
+          title: "Search index doesn't factor real-time inventory status",
+          tools: ["BigQuery"],
+          time: "14:18",
+          stepType: "check",
+          body: "Search ranking uses purchase velocity (30-day) and text relevance. Inventory status weight: 0%. Index refreshes every 6 hours, not on stock changes.",
+        },
+        {
+          title: "Users perform 2.3 extra searches per session on average",
+          tools: ["Mixpanel"],
+          time: "14:24",
           stepType: "scan",
-          body: "892 support tickets describing a spinning loader with no progress indication or retry option.",
+          body: "Affected sessions show 2.3 extra searches before order placement. Time-to-order increases by 45 seconds, reducing conversion by 8%.",
         },
       ],
-      durationLabel: "4 checks · 4 tools · 22 min",
-      rootCause: "Payment gateway timeout doubled",
+      durationLabel: "4 checks · 3 tools · 22 min",
+      rootCause: "Search ranking ignores real-time inventory availability",
       rootCauseDetail:
-        "Razorpay increased server-side timeout from 15s to 30s. Users now wait 2x longer on failures with no progress indicator.",
+        "Search index uses 30-day purchase velocity without factoring live stock status. Out-of-stock items retain high rank for up to 6 hours after selling out.",
     },
     ticket: {
       id: "SQ-504",
-      title: "Add client-side UX timeout at 15s with progress indicator",
-      priority: "P0",
-      points: "3",
-      assignee: "@dev",
+      title: "Add real-time inventory signal to search ranking algorithm",
+      priority: "P1",
+      points: "5",
+      assignee: "@ritu",
+      description:
+        "Search ranking uses 30-day purchase velocity but ignores live inventory status. Out-of-stock products retain top positions for up to 6 hours after selling out, causing 38% bounce-back and 2.3 extra searches per affected session. Add inventory as a ranking signal with near-real-time refresh.",
+      labels: ["search", "inventory", "discovery"],
       acceptance: [
-        'Show "Taking longer than usual" message at 15s',
-        "Visual progress polling for payment status",
-        "Optimistic confirmation for repeat customers with good history",
+        "Out-of-stock products deprioritized below all in-stock results",
+        "Search index refreshes inventory status within 60 seconds of stock change",
+        'Show "Out of Stock" badge directly in search result cards',
+        'Add "Show only in-stock" filter toggle (default: on)',
       ],
     },
     slackSummary:
-      "Cart-to-order dropped 12% after Razorpay doubled timeout to 30s. Retry rate fell from 52% to 28%. ₹3.8Cr/week GMV at risk.",
+      "Search showing out-of-stock products in top results. 38% bounce-back rate, 2.3 extra searches per session. 34,500 users affected weekly.",
   },
   {
     id: "sq-005",
-    title: "Coupon auto-apply replacing better manual promo codes",
-    severity: "medium",
+    title: "Coupon auto-apply overwriting higher-value manual promo codes",
+    severity: "high",
     type: "recurring_tickets",
     typeLabel: "Recurring Tickets",
     metric: "2,340",
     metricLabel: "complaints",
-    usersAffected: "8,900",
-    timeAgo: "12h ago",
+    usersAffected: "28,400",
+    timeAgo: "5h ago",
     description:
-      "Auto-apply fires on checkout and replaces ₹150 manual codes with ₹50 auto codes. 31% of affected users stopped using coupons entirely.",
+      "The auto-apply coupon feature (launched 2 weeks ago) is silently replacing manually-entered promo codes with lower-value auto coupons at checkout. Users enter a ₹150-off referral code from an influencer campaign, but when they navigate to the payment page, the system replaces it with a ₹50-off \"SAVE50\" auto-applied coupon. The auto-apply hook fires on checkout navigation and overwrites any existing coupon without comparing discount values. 2,340 support tickets in 2 weeks, and 31% of affected users have stopped entering coupon codes entirely.",
     investigation: {
       steps: [
         {
@@ -425,34 +309,34 @@ const ISSUES: Issue[] = [
           tools: ["Zendesk"],
           time: "12:05",
           stepType: "scan",
-          body: "Clustered 2,340 support tickets. Common theme: manually entered promo codes being overridden at checkout.",
+          body: "Clustered 2,340 support tickets. Common pattern: manually entered promo codes being silently overridden at checkout without user consent.",
         },
         {
           title: "Auto-apply replaces ₹150 manual code with ₹50 auto code",
           tools: ["Mixpanel"],
           time: "12:14",
           stepType: "data",
-          body: "Auto-apply fires on checkout navigation and replaces existing ₹150 referral codes with a ₹50 SAVE50 auto-coupon.",
+          body: "Tracked coupon application events: auto-apply fires on checkout navigation and replaces existing ₹150 referral codes with a ₹50 SAVE50 auto-coupon.",
         },
         {
           title: "31% of affected users stopped using coupons entirely",
           tools: ["BigQuery"],
           time: "12:22",
           stepType: "check",
-          body: "31% of affected users stopped entering coupon codes. Trust in the coupon system has measurably eroded.",
+          body: "Cohort analysis: 31% of affected users stopped entering coupon codes in subsequent sessions. Total coupon value lost by users: ₹7.5L.",
         },
         {
-          title: "Auto-apply runs after checkout nav, no comparison logic",
+          title: "Auto-apply hook runs without discount-value comparison",
           tools: ["PostHog"],
           time: "12:28",
           stepType: "replay",
-          body: "Code path confirms: auto-apply hook runs after navigation with no discount-value comparison logic.",
+          body: "Code path confirms: auto-apply fires after page navigation with no discount-value comparison logic. It blindly applies the first eligible auto-coupon.",
         },
       ],
       durationLabel: "4 checks · 4 tools · 23 min",
-      rootCause: "Auto-apply overwrites better manual coupons",
+      rootCause: "Auto-apply overwrites coupons without value comparison",
       rootCauseDetail:
-        "Auto-apply fires on checkout navigation and replaces any existing coupon without comparing discount values.",
+        "Auto-apply fires on checkout navigation and replaces any existing coupon without comparing discount values. No safeguard against downgrading user discounts.",
     },
     ticket: {
       id: "SQ-505",
@@ -460,14 +344,219 @@ const ISSUES: Issue[] = [
       priority: "P1",
       points: "2",
       assignee: "@sanya",
+      description:
+        "Auto-apply coupon hook fires on checkout navigation and blindly replaces any existing coupon without value comparison. Users' ₹150 referral codes are being overwritten by ₹50 auto-coupons. 31% of affected users stopped using coupons entirely. Fix the logic and restore user trust.",
+      labels: ["checkout", "coupons", "trust"],
       acceptance: [
-        "Auto-apply skipped when manual coupon offers better discount",
-        "Show comparison UI when auto coupon is better than manual",
-        "Add user toggle to disable auto-apply in settings",
+        "Auto-apply skipped when existing manual coupon offers equal or better discount",
+        "Show comparison UI when auto coupon is better: \"We found a better deal!\"",
+        "Add user toggle to disable auto-apply in account settings",
+        "Audit and refund ₹7.5L in lost discount value to affected users",
       ],
     },
     slackSummary:
-      "Auto-apply replacing ₹150 manual codes with ₹50 auto codes. 2,340 complaints, 31% stopped using coupons entirely.",
+      "Auto-apply replacing ₹150 manual codes with ₹50 auto codes. 2,340 complaints, 31% stopped using coupons. ₹7.5L in lost user discounts.",
+  },
+  {
+    id: "sq-006",
+    title: "Delivery ETA overestimation driving order cancellations in metros",
+    severity: "high",
+    type: "ui_ux",
+    typeLabel: "UX Issue",
+    metric: "+34%",
+    metricLabel: "cancellation rate",
+    usersAffected: "18,600",
+    timeAgo: "6h ago",
+    description:
+      "Post-order cancellation rate increased 34% in Mumbai and Delhi after an ETA model update added a 12-minute buffer for \"traffic uncertainty.\" The actual delivery times improved by 3 minutes on average, but the displayed ETAs increased by 12 minutes, making users cancel orders and switch to competitors showing lower ETAs. 68% of cancellation reasons cite \"delivery time too long.\" The model optimized for reducing \"late delivery\" complaints but created a worse problem: users who would have happily waited 25 minutes are now cancelling because they're told it will take 40 minutes.",
+    investigation: {
+      steps: [
+        {
+          title: "Order cancellation rate up 34% in Mumbai and Delhi",
+          tools: ["Mixpanel"],
+          time: "15:00",
+          stepType: "data",
+          body: "Cancellation rate in Mumbai/Delhi went from 4.2% to 5.6%, a 34% increase. 68% of cancellation reasons cite \"delivery time too long.\"",
+        },
+        {
+          title: "ETA model v3.8 added 12-minute safety buffer on April 25",
+          tools: ["GitHub", "BigQuery"],
+          time: "15:08",
+          stepType: "scan",
+          body: "Model update added worst-case traffic buffer. Shown ETAs increased by 12 min while actual delivery improved by 3 min, creating a 15-min perception gap.",
+        },
+        {
+          title: "Actual delivery: 25 min avg vs shown ETA: 40 min avg",
+          tools: ["BigQuery"],
+          time: "15:16",
+          stepType: "check",
+          body: "Post-update data: actual delivery averages 25 min, shown ETA averages 40 min. Users anchored to the high number cancel before delivery can prove itself.",
+        },
+        {
+          title: "Cancellations peak within 2 min of order placement",
+          tools: ["PostHog"],
+          time: "15:22",
+          stepType: "replay",
+          body: "78% of cancellations happen within 2 minutes of placing the order, immediately after seeing the inflated ETA. Users reorder from competitors.",
+        },
+      ],
+      durationLabel: "4 checks · 4 tools · 22 min",
+      rootCause: "ETA model over-buffers, inflating shown delivery times",
+      rootCauseDetail:
+        "ETA model v3.8 added a 12-min worst-case buffer. Actual delivery is 25 min but shown ETA says 40 min. Users cancel immediately after seeing the number.",
+    },
+    ticket: {
+      id: "SQ-506",
+      title: "Reduce ETA buffer and show delivery time as a range",
+      priority: "P1",
+      points: "3",
+      assignee: "@arjun",
+      description:
+        "ETA model v3.8 added a 12-min worst-case buffer that inflates shown delivery times. Users see \"40 min\" but actual delivery is 25 min, so they cancel immediately and reorder from competitors. Each cancellation costs ₹120 in wasted prep + idle rider time. Reduce buffer and show range.",
+      labels: ["delivery", "eta-model", "cancellations"],
+      acceptance: [
+        "Reduce safety buffer from 12 min to 5 min (acceptable late rate: <8%)",
+        "Show ETA as range (\"25-35 min\") instead of single worst-case number",
+        'Add "Usually arrives earlier" badge for routes with >90% on-time history',
+        "Monitor cancellation rate daily for 1 week post-change",
+      ],
+    },
+    slackSummary:
+      "Cancellations up 34% in metros after ETA model added 12-min buffer. Shown: 40 min, actual: 25 min. Each cancelled order costs ₹120.",
+  },
+  {
+    id: "sq-001",
+    title: "Cart abandonment spike after payment gateway timeout increase",
+    severity: "high",
+    type: "anomaly",
+    typeLabel: "Analytics Anomaly",
+    metric: "−12%",
+    metricLabel: "cart-to-order",
+    usersAffected: "12,800",
+    timeAgo: "8h ago",
+    description:
+      "Cart-to-order conversion dropped 12% after Razorpay silently doubled their server-side timeout from 15s to 30s. Users now stare at a spinner for twice as long on failed payments before seeing an error. The retry rate after timeout collapsed from 52% to 28% because users assume the app has frozen and close the tab instead of waiting. Dinner-time orders (7-10 PM) are hit hardest due to payment gateway congestion.",
+    investigation: {
+      steps: [
+        {
+          title: "Cart-to-order conversion dropped 12% week-over-week",
+          tools: ["Mixpanel"],
+          time: "11:00",
+          stepType: "data",
+          body: "Week-over-week conversion dropped 12%. Dinner-time orders (7-10 PM) hit hardest due to payment gateway congestion.",
+        },
+        {
+          title: "Razorpay doubled server-side timeout from 15s to 30s",
+          tools: ["Sentry", "BigQuery"],
+          time: "11:08",
+          stepType: "scan",
+          body: "Razorpay config change on April 22 increased timeout from 15s to 30s. Frontend matches this with no progress indicator or fallback UX.",
+        },
+        {
+          title: "Retry rate collapsed from 52% to 28% post-change",
+          tools: ["PostHog"],
+          time: "11:16",
+          stepType: "data",
+          body: "Session replays confirm: users wait 2x longer, then close the tab. Retry rate fell from 52% to 28%. Most assume the app is frozen.",
+        },
+        {
+          title: '892 "payment stuck" tickets in 1 week',
+          tools: ["Zendesk"],
+          time: "11:22",
+          stepType: "scan",
+          body: "892 support tickets describing a spinning loader with no progress indication or retry option. ₹3.8Cr/week GMV at risk.",
+        },
+      ],
+      durationLabel: "4 checks · 4 tools · 22 min",
+      rootCause: "Payment gateway timeout doubled without UX adaptation",
+      rootCauseDetail:
+        "Razorpay increased server-side timeout from 15s to 30s. Users now wait 2× longer on failures with no progress indicator, causing 72% to close the tab.",
+    },
+    ticket: {
+      id: "SQ-501",
+      title: "Add client-side UX timeout at 15s with progress indicator",
+      priority: "P0",
+      points: "3",
+      assignee: "@dev",
+      description:
+        "Razorpay doubled their timeout to 30s but our frontend blindly matches it with no progress feedback. Users wait 2× longer on failed payments and assume the app is frozen. Add a client-side UX timeout at 15s that shows a progress state and retry option.",
+      labels: ["checkout", "payment", "ux-critical"],
+      acceptance: [
+        'Show "Taking longer than usual" message at 15s with animated progress',
+        "Visual progress polling for payment status every 3 seconds",
+        "Optimistic confirmation for repeat customers with good payment history",
+        "Add payment-failure retry CTA visible immediately after failure detected",
+      ],
+    },
+    slackSummary:
+      "Cart-to-order dropped 12% after Razorpay doubled timeout to 30s. Retry rate fell from 52% to 28%. ₹3.8Cr/week GMV at risk.",
+  },
+  {
+    id: "sq-002",
+    title: "Product listing conversion drop masked by flash sale traffic",
+    severity: "medium",
+    type: "anomaly",
+    typeLabel: "Analytics Anomaly",
+    metric: "−22%",
+    metricLabel: "PLP-to-PDP rate",
+    usersAffected: "8,900",
+    timeAgo: "10h ago",
+    description:
+      "Product listing page (PLP) to product detail page (PDP) click-through rate silently dropped 22% after a front-end deploy changed the product card layout. Nobody caught it because a simultaneous flash sale drove 40% more category page traffic, keeping absolute PDP visits flat. The deploy removed product ratings from card thumbnails and replaced the \"Add to Cart\" quick-action with a smaller icon button. Both changes reduced engagement on mobile where 74% of browse sessions originate.",
+    investigation: {
+      steps: [
+        {
+          title: "PLP-to-PDP rate decoupled from traffic volume after deploy",
+          tools: ["Mixpanel"],
+          time: "09:12",
+          stepType: "data",
+          body: "Click-through rate dropped 22% while absolute PDP visits stayed flat. Flash sale volume increase masked the per-session engagement decline.",
+        },
+        {
+          title: "Deploy v4.8.1 removed ratings + resized quick-add button",
+          tools: ["GitHub"],
+          time: "09:20",
+          stepType: "scan",
+          body: "Front-end deploy on May 12 removed star ratings from product cards and shrank the Add to Cart button to a 24px icon on mobile viewports.",
+        },
+        {
+          title: "Mobile engagement dropped 31% vs desktop 8%",
+          tools: ["PostHog"],
+          time: "09:28",
+          stepType: "replay",
+          body: "Session replays show mobile users scrolling past products without tapping. Heatmaps confirm the new icon button gets 68% fewer taps than the old text button.",
+        },
+        {
+          title: "Flash sale inflated absolute numbers, hiding the rate drop",
+          tools: ["BigQuery"],
+          time: "09:34",
+          stepType: "check",
+          body: "Flash sale drove 40% more traffic to PLPs, keeping absolute PDP visits within normal range and hiding the engagement decline from dashboards.",
+        },
+      ],
+      durationLabel: "4 checks · 4 tools · 22 min",
+      rootCause: "Product card redesign removed trust signals on mobile",
+      rootCauseDetail:
+        "Deploy v4.8.1 removed star ratings from product cards and shrank the Add to Cart button to a 24px icon. 74% of traffic is mobile, and flash sale masked the impact.",
+    },
+    ticket: {
+      id: "SQ-502",
+      title: "Restore star ratings and text CTA on mobile product cards",
+      priority: "P0",
+      points: "3",
+      assignee: "@akhil",
+      description:
+        "Deploy v4.8.1 removed star ratings from product cards and shrank Add to Cart to a 24px icon. Mobile engagement dropped 31% but flash sale traffic masked it. Restore trust signals and proper tap targets on mobile viewports.",
+      labels: ["mobile", "plp", "deploy-regression"],
+      acceptance: [
+        "Star ratings visible on product cards for viewports < 768px",
+        'Restore "Add to Cart" as text button (min tap target 44px)',
+        "A/B test icon-only variant for desktop separately",
+        "Add PLP-to-PDP rate alert normalized for traffic volume changes",
+      ],
+    },
+    slackSummary:
+      "PLP-to-PDP rate dropped 22% after v4.8.1 removed ratings from product cards. Flash sale masked it. 68,400 users affected.",
   },
 ];
 
@@ -580,7 +669,7 @@ export function HowItWorks() {
           <p className="mt-5 text-[15px] sm:text-[16px] leading-relaxed text-[color:var(--color-foreground-secondary)] max-w-2xl">
             Squash continuously watches your analytics, session replays, support
             tickets and error logs. When it spots something, it investigates
-            across every tool and hands your team a fix — not just an alert.
+            across every tool and hands your team a fix, not just an alert.
           </p>
         </div>
       </div>
@@ -1251,6 +1340,23 @@ function ActPanel({ issue }: { issue: Issue }) {
               {t.title}
             </h4>
 
+            {/* Description */}
+            <p className="mt-2.5 text-[11.5px] sm:text-[12px] leading-relaxed text-[color:var(--color-foreground-secondary)]">
+              {t.description}
+            </p>
+
+            {/* Labels */}
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {t.labels.map((label) => (
+                <span
+                  key={label}
+                  className="text-[9.5px] font-medium px-2 py-0.5 rounded-full bg-[color:var(--color-background-secondary)] border border-[color:var(--color-border-light)] text-[color:var(--color-foreground-secondary)]"
+                >
+                  {label}
+                </span>
+              ))}
+            </div>
+
             {/* Acceptance criteria */}
             <div className="mt-4">
               <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[color:var(--color-foreground-muted)] mb-2">
@@ -1289,8 +1395,13 @@ function ActPanel({ issue }: { issue: Issue }) {
               </ul>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-[color:var(--color-border-light)] text-[10px] text-[color:var(--color-foreground-muted)]">
-              Linked to finding #{issue.id} · Investigation attached
+            <div className="mt-4 pt-3 border-t border-[color:var(--color-border-light)] flex items-center justify-between">
+              <span className="text-[10px] text-[color:var(--color-foreground-muted)]">
+                Linked to finding #{issue.id} · Investigation attached
+              </span>
+              <span className="text-[9px] font-medium px-2 py-0.5 rounded bg-[color:var(--color-background-secondary)] border border-[color:var(--color-border-light)] text-[color:var(--color-foreground-muted)]">
+                Sprint 24
+              </span>
             </div>
           </div>
         </div>
@@ -1339,7 +1450,7 @@ function ActPanel({ issue }: { issue: Issue }) {
                   </span>
                 </div>
                 <p className="mt-1 text-[12px] text-[color:var(--color-foreground)] leading-relaxed">
-                  New finding detected — ticket created and assigned.
+                  New finding detected. Ticket created and assigned.
                 </p>
 
                 {/* Rich attachment block */}

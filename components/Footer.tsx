@@ -4,11 +4,7 @@ import { DEMO_URL, FOUNDER_EMAIL } from "@/lib/constants";
 
 const EXPLORE_LINKS = [
   { label: "How it works", href: "#how-it-works" },
-  { label: "Product", href: "#product" },
-  { label: "What Squash catches", href: "#scenarios" },
   { label: "Ask Squash", href: "#ask-squash" },
-  { label: "Integrations", href: "#integrations" },
-  { label: "FAQ", href: "#faq" },
 ];
 
 const CONTACT_LINKS = [
@@ -29,8 +25,7 @@ export function Footer() {
           <div className="lg:col-span-4">
             <Logo />
             <p className="mt-4 text-[14px] leading-relaxed text-[color:var(--color-foreground-secondary)] max-w-xs">
-              An AI teammate for product teams. Always on, always grounded in
-              real signal, so things don&apos;t slip past you.
+              Watches your product stack 24/7 so nothing slips past your team.
             </p>
           </div>
 
@@ -81,7 +76,7 @@ export function Footer() {
             © 2026 Squash, Inc. All rights reserved.
           </p>
           <p className="text-[12px] text-[color:var(--color-foreground-muted)]">
-            Always on, always grounded in real signal.
+            Built in India.
           </p>
         </div>
       </div>

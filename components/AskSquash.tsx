@@ -29,9 +29,8 @@ export function AskSquash() {
             </h2>
             <p className="mt-5 text-[15px] sm:text-[16px] leading-relaxed text-[color:var(--color-foreground-secondary)]">
               Squash is wired into your analytics, sessions, tickets, calls, and
-              backlog. Ask a funnel question, draft a ticket, summarise complaints,
-              and you get the assistance of someone who&apos;s read every signal in
-              your stack.
+              backlog. Ask a funnel question, draft a ticket, summarise complaints.
+              It answers like someone who&apos;s already read everything.
             </p>
 
             <ul className="mt-6 space-y-3">

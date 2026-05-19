@@ -17,7 +17,7 @@ import { INTEGRATIONS } from "@/lib/constants";
    ═══════════════════════════════════════════════════════════════ */
 
 const NARRATIVE_LINES = [
-  "PMs spend 30–40% of their time on manual data work.",
+  "PMs spend 30-40% of their time on manual data work.",
   "Five tools open. Cross-referencing funnels. Watching recordings. Pulling reports.",
   "Conversion dropped on Tuesday. Found on Friday. Fix ships next sprint.",
   "10,000 sessions recorded. 50 reviewed. Your team acts on less than 5% of your data.",
@@ -74,7 +74,7 @@ const BG_CARDS: BGCard[] = [
   },
   {
     name: "Sentry",
-    signal: "TypeError spike — 142",
+    signal: "TypeError spike: 142",
     detail: "discount.amount undefined",
     badge: "142",
     time: "72h ago",
@@ -90,7 +90,7 @@ const BG_CARDS: BGCard[] = [
   },
   {
     name: "Zendesk",
-    signal: "12 tickets — promo issue",
+    signal: "12 tickets, promo issue",
     detail: "Users charged full price",
     badge: "12",
     time: "since Tue",
@@ -170,7 +170,7 @@ const FEEDBACK_SNIPPETS: FeedbackSnippet[] = [
   {
     type: "quote",
     content: "\"Why was I charged full price?\"",
-    subtext: "— Sarah M., via Zendesk",
+    subtext: "Sarah M., via Zendesk",
     top: "18%",
     left: "20%",
     rotation: -1.5,
@@ -179,7 +179,7 @@ const FEEDBACK_SNIPPETS: FeedbackSnippet[] = [
   {
     type: "quote",
     content: "\"Checkout is broken again\"",
-    subtext: "— #product-bugs, Slack",
+    subtext: "#product-bugs, Slack",
     top: "22%",
     left: "56%",
     rotation: 1,
@@ -188,7 +188,7 @@ const FEEDBACK_SNIPPETS: FeedbackSnippet[] = [
   {
     type: "quote",
     content: "\"Can't apply my promo code\"",
-    subtext: "— Support ticket #4821",
+    subtext: "Support ticket #4821",
     top: "58%",
     left: "18%",
     rotation: 2,
@@ -197,7 +197,7 @@ const FEEDBACK_SNIPPETS: FeedbackSnippet[] = [
   {
     type: "quote",
     content: "\"We're losing enterprise deals\"",
-    subtext: "— VP Sales, Granola call",
+    subtext: "VP Sales, Granola call",
     top: "60%",
     left: "58%",
     rotation: -1,

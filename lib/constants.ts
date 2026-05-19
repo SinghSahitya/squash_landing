@@ -11,8 +11,6 @@ export const FOUNDER_EMAIL = "rithen@heysquash.com";
 export const NAV_LINKS = [
   { label: "How it works", href: "#how-it-works" },
   { label: "Ask Squash", href: "#ask-squash" },
-  { label: "Integrations", href: "#integrations" },
-  { label: "FAQ", href: "#faq" },
 ];
 
 // Integrations Squash plugs into. `slug` matches a Simple Icons brand
