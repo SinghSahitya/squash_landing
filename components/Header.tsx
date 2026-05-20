@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { NAV_LINKS, DEMO_URL, APP_URL } from "@/lib/constants";
 import { Logo } from "./ui/Logo";
@@ -11,31 +12,44 @@ import { Logo } from "./ui/Logo";
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const reduce = useReducedMotion();
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
+    const onScroll = () => {
+      setScrolled(window.scrollY > 20);
+      // Close the mobile menu as soon as the page scrolls.
+      setMobileOpen(false);
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
+    <>
     <header
       className={`sticky top-0 z-50 w-full transition-all duration-300 ${
-        scrolled
-          ? "bg-[color:var(--color-background)]/80 backdrop-blur-md border-b border-[color:var(--color-border)]"
-          : "bg-transparent"
+        mobileOpen
+          ? "bg-[color:var(--color-background)] border-b border-[color:var(--color-border)]"
+          : scrolled
+            ? "bg-[color:var(--color-background)]/80 backdrop-blur-md border-b border-[color:var(--color-border)]"
+            : "bg-transparent"
       }`}
     >
       <nav
         aria-label="Primary"
-        className="max-w-7xl mx-auto px-6 lg:px-8 h-16 flex items-center justify-between"
+        className="relative max-w-7xl mx-auto px-6 lg:px-8 h-16 flex items-center justify-between"
       >
         <Link href="/" className="flex items-center gap-2" aria-label="Squash home">
           <Logo className="h-7 w-auto" />
         </Link>
 
-        <ul className="hidden md:flex items-center gap-8">
+        {/*
+          Nav links are absolutely centered to the viewport (independent
+          of the logo / CTA widths on either side) so they always sit at
+          the visual midpoint regardless of how the side groups grow.
+        */}
+        <ul className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           {NAV_LINKS.map((link) => (
             <li key={link.href}>
               <a
@@ -70,7 +84,7 @@ export function Header() {
         </div>
 
         <button
-          className="md:hidden p-2 -mr-2"
+          className="md:hidden p-2.5 -mr-2.5"
           aria-expanded={mobileOpen}
           aria-controls="mobile-menu"
           aria-label="Toggle menu"
@@ -94,42 +108,65 @@ export function Header() {
       </nav>
 
       {/* Mobile menu */}
-      {mobileOpen && (
-        <div
-          id="mobile-menu"
-          className="md:hidden border-t border-[color:var(--color-border)] bg-[color:var(--color-background)]"
-        >
-          <ul className="flex flex-col gap-1 px-6 py-4">
-            {NAV_LINKS.map((link) => (
-              <li key={link.href}>
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            id="mobile-menu"
+            key="mobile-menu"
+            initial={reduce ? false : { height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            className="md:hidden overflow-hidden border-t border-[color:var(--color-border)] bg-[color:var(--color-background)]"
+          >
+            <ul className="flex flex-col gap-1 px-6 py-4">
+              {NAV_LINKS.map((link) => (
+                <li key={link.href}>
+                  <a
+                    href={link.href}
+                    className="block py-2.5 text-sm text-[color:var(--color-foreground-secondary)]"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+              <li className="flex gap-2 pt-2">
                 <a
-                  href={link.href}
-                  className="block py-2.5 text-sm text-[color:var(--color-foreground-secondary)]"
-                  onClick={() => setMobileOpen(false)}
+                  href={APP_URL}
+                  className="flex-1 text-center text-sm py-2 rounded-full border border-[color:var(--color-border)]"
                 >
-                  {link.label}
+                  Log in
+                </a>
+                <a
+                  href={DEMO_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 text-center text-sm font-medium py-2 rounded-full bg-[color:var(--color-primary)] text-white"
+                >
+                  Book a demo
                 </a>
               </li>
-            ))}
-            <li className="flex gap-2 pt-2">
-              <a
-                href={APP_URL}
-                className="flex-1 text-center text-sm py-2 rounded-full border border-[color:var(--color-border)]"
-              >
-                Log in
-              </a>
-              <a
-                href={DEMO_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 text-center text-sm font-medium py-2 rounded-full bg-[color:var(--color-primary)] text-white"
-              >
-                Book a demo
-              </a>
-            </li>
-          </ul>
-        </div>
-      )}
+            </ul>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
+
+    {/* Tap-outside backdrop — dismisses the open mobile menu */}
+    <AnimatePresence>
+      {mobileOpen && (
+        <motion.div
+          aria-hidden="true"
+          onClick={() => setMobileOpen(false)}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="md:hidden fixed inset-x-0 top-16 bottom-0 z-40 bg-[color:var(--color-foreground)]/10"
+        />
+      )}
+    </AnimatePresence>
+    </>
   );
 }

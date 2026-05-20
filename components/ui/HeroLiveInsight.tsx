@@ -4,7 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { IntegrationMark } from "./IntegrationMark";
 import { ToolTag } from "./ToolTag";
-import { INTEGRATIONS } from "@/lib/constants";
+import { INTEGRATIONS, DEMO_URL } from "@/lib/constants";
 
 // Hero visual. Animation arc:
 //   1. Four "raw signal" pills materialise in the left column, each branded
@@ -602,16 +602,32 @@ const INVESTIGATION_STEPS = [
 ];
 
 const InsightCard = function InsightCard(
-  { reduce, innerRef }: { reduce: boolean | null; innerRef: React.Ref<HTMLDivElement> },
+  {
+    reduce,
+    innerRef,
+    defaultLogOpen = false,
+    mobile = false,
+  }: {
+    reduce: boolean | null;
+    innerRef: React.Ref<HTMLDivElement>;
+    defaultLogOpen?: boolean;
+    mobile?: boolean;
+  },
 ) {
-  const [logOpen, setLogOpen] = useState(false);
+  const [logOpen, setLogOpen] = useState(defaultLogOpen);
+
+  // On mobile the card is shown on its own (the signal pills no longer
+  // stream in first), so it shouldn't sit invisible waiting on the
+  // constellation timeline — bring it and its content in right away.
+  const cardStart = mobile ? 0.1 : T.cardStart;
+  const cardContent = mobile ? 0.3 : T.cardContent;
 
   const trans = (delay = 0) =>
     reduce
       ? { duration: 0 }
       : {
           duration: 0.55,
-          delay: T.cardContent + delay,
+          delay: cardContent + delay,
           ease: [0.16, 1, 0.3, 1] as const,
         };
 
@@ -627,7 +643,7 @@ const InsightCard = function InsightCard(
           ? { duration: 0 }
           : {
               duration: 0.8,
-              delay: T.cardStart,
+              delay: cardStart,
               ease: [0.16, 1, 0.3, 1],
             }
       }
@@ -707,7 +723,13 @@ const InsightCard = function InsightCard(
             onClick={() => setLogOpen((v) => !v)}
             className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-[color:var(--color-border-light)] bg-[color:var(--color-background-tertiary)] hover:bg-[color:var(--color-background-secondary)] transition-colors"
           >
-            <span className="flex items-center gap-2">
+            <span
+              className={`flex text-left ${
+                mobile
+                  ? "flex-col items-start gap-0.5"
+                  : "items-center gap-2"
+              }`}
+            >
               <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[color:var(--color-foreground-muted)]">
                 Investigation log
               </span>
@@ -726,7 +748,7 @@ const InsightCard = function InsightCard(
               strokeLinejoin="round"
               animate={{ rotate: logOpen ? 180 : 0 }}
               transition={{ duration: 0.2 }}
-              className="text-[color:var(--color-foreground-muted)]"
+              className="shrink-0 text-[color:var(--color-foreground-muted)]"
               aria-hidden="true"
             >
               <polyline points="6 9 12 15 18 9" />
@@ -821,28 +843,37 @@ const InsightCard = function InsightCard(
           initial={reduce ? false : { opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={trans(0.58)}
-          className="mt-3 flex items-center justify-between gap-2 p-2.5 rounded-lg border border-dashed border-[color:var(--color-primary-subtle-border)] bg-white"
+          className={`mt-3 flex gap-2 p-2.5 rounded-lg border border-dashed border-[color:var(--color-primary-subtle-border)] bg-white ${
+            mobile ? "flex-col items-stretch" : "items-center justify-between"
+          }`}
         >
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[color:var(--color-foreground-muted)]">
               Suggested action
             </p>
-            <p className="text-[12px] font-medium text-[color:var(--color-foreground)] truncate">
+            <p
+              className={`text-[12px] font-medium text-[color:var(--color-foreground)] ${
+                mobile ? "" : "truncate"
+              }`}
+            >
               Create Linear issue · escalate to Payments
             </p>
           </div>
-          <button
-            type="button"
-            tabIndex={-1}
-            aria-hidden="true"
-            className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-[color:var(--color-foreground)] text-white text-[11px] font-medium"
+          <a
+            href={DEMO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Book a demo"
+            className={`inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-full bg-[color:var(--color-foreground)] text-white text-[11px] font-medium transition-opacity hover:opacity-90 ${
+              mobile ? "w-full" : "shrink-0"
+            }`}
           >
             Create
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <line x1="5" y1="12" x2="19" y2="12" />
               <polyline points="12 5 19 12 12 19" />
             </svg>
-          </button>
+          </a>
         </motion.div>
       </div>
     </motion.div>
@@ -933,57 +964,19 @@ function DesktopLayout({ reduce }: { reduce: boolean | null }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// MOBILE LAYOUT — pills stacked above the card, no constellation
+// MOBILE LAYOUT — just the Squash insight card (log pre-opened);
+// the source signal pills and constellation are desktop-only.
 // ─────────────────────────────────────────────────────────────
 
 function MobileLayout({ reduce }: { reduce: boolean | null }) {
   return (
-    <div className="w-full max-w-[560px] mx-auto">
-      <div className="flex flex-col gap-2.5">
-        {SIGNAL_ORDER.map((id, i) => (
-          <motion.div
-            key={id}
-            initial={reduce ? false : { opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={
-              reduce
-                ? { duration: 0 }
-                : {
-                    duration: 0.5,
-                    delay: T.pillsStart + i * T.pillsStagger,
-                    ease: [0.16, 1, 0.3, 1],
-                  }
-            }
-          >
-            {PILL_BY_ID[id]()}
-          </motion.div>
-        ))}
-      </div>
-
-      <motion.div
-        initial={reduce ? false : { opacity: 0, scaleY: 0 }}
-        animate={{ opacity: [0, 0.95, 0.6], scaleY: 1 }}
-        transition={
-          reduce
-            ? { duration: 0 }
-            : {
-                duration: 0.6,
-                delay: T.pathsStart,
-                times: [0, 0.6, 1],
-                ease: [0.16, 1, 0.3, 1],
-              }
-        }
-        className="mx-auto mt-1 w-px h-6 origin-top"
-        style={{
-          background:
-            "linear-gradient(to bottom, rgba(232,100,15,0), rgba(232,100,15,0.95))",
-        }}
-        aria-hidden="true"
+    <div className="w-full max-w-[480px] mx-auto">
+      <InsightCard
+        reduce={reduce}
+        innerRef={() => {}}
+        defaultLogOpen
+        mobile
       />
-
-      <div className="mt-1">
-        <InsightCard reduce={reduce} innerRef={() => {}} />
-      </div>
     </div>
   );
 }

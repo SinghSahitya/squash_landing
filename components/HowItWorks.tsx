@@ -564,9 +564,9 @@ const ISSUES: Issue[] = [
    TABS & CONFIG
    ══════════════════════════════════════════════════════════════ */
 const TABS = [
-  { id: "detect", label: "Detects what matters" },
-  { id: "investigate", label: "Investigates across tools" },
-  { id: "act", label: "Closes the loop" },
+  { id: "detect", label: "Detects what matters", shortLabel: "Detect" },
+  { id: "investigate", label: "Investigates across tools", shortLabel: "Investigate" },
+  { id: "act", label: "Closes the loop", shortLabel: "Act" },
 ] as const;
 
 const AUTO_PLAY_MS = 7000;
@@ -580,8 +580,16 @@ export function HowItWorks() {
   const [selectedIssue, setSelectedIssue] = useState(0);
   const [paused, setPaused] = useState(false);
   const [progress, setProgress] = useState(0);
-  const sectionRef = useRef<HTMLElement>(null);
-  const isInView = useInView(sectionRef, { margin: "-100px" });
+  // The auto-play timer only runs when the showcase PANEL (not the entire
+  // section) is in view, and pauses on hover over the PANEL itself. This
+  // keeps the timer from ticking while the user is reading the heading
+  // above or has scrolled past the panel.
+  const panelRef = useRef<HTMLDivElement>(null);
+  // tabBarRef is the scroll-anchor target on user-triggered tab changes —
+  // we align THIS to just under the sticky header so the tab bar stays
+  // visible above the (possibly shorter) panel that comes next.
+  const tabBarRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(panelRef, { margin: "-80px", amount: 0.25 });
   const rafRef = useRef<number>(0);
   const startRef = useRef<number>(0);
 
@@ -596,7 +604,12 @@ export function HowItWorks() {
   }, []);
 
   useEffect(() => {
-    if (paused || !isInView || reduce) return;
+    if (paused || !isInView || reduce) {
+      // Freeze the bar where it is when we leave view or pause; the
+      // timer reference resets so the next tick re-anchors to "now".
+      startRef.current = 0;
+      return;
+    }
     const tick = (ts: number) => {
       if (!startRef.current) startRef.current = ts;
       const pct = Math.min((ts - startRef.current) / AUTO_PLAY_MS, 1);
@@ -613,6 +626,30 @@ export function HowItWorks() {
     startRef.current = 0;
   };
 
+  // When the viewer clicks through tabs ("View investigation" / "Create
+  // ticket in Linear"), the new panel may be a different height than the
+  // one they were just reading. Anchor the TAB BAR (not just the panel)
+  // to a comfortable spot under the sticky header so they can see the
+  // three tabs + the panel together — context for where they are in the
+  // flow, and the new panel right below it.
+  const scrollTabsIntoView = () => {
+    if (typeof window === "undefined" || reduce) return;
+    const el = tabBarRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    // Sticky header is 64px; leave a little breathing room above the tabs.
+    const headerOffset = 88;
+    // Only scroll if the tabs are above the header (scrolled past) OR
+    // below the comfortable read zone — don't yank when they're already
+    // in a fine spot.
+    if (rect.top < headerOffset || rect.top > window.innerHeight * 0.35) {
+      window.scrollTo({
+        top: window.scrollY + rect.top - headerOffset,
+        behavior: "smooth",
+      });
+    }
+  };
+
   const selectTab = (i: number) => {
     setActiveTab(i);
     resetTimer();
@@ -624,12 +661,14 @@ export function HowItWorks() {
     setActiveTab(1);
     resetTimer();
     setPaused(true);
+    scrollTabsIntoView();
   };
 
   const goToAct = () => {
     setActiveTab(2);
     resetTimer();
     setPaused(true);
+    scrollTabsIntoView();
   };
 
   const transition = reduce
@@ -640,15 +679,9 @@ export function HowItWorks() {
 
   return (
     <section
-      ref={sectionRef}
       id="how-it-works"
       aria-labelledby="hiw-heading"
-      className="pt-16 sm:pt-20 md:pt-32 overflow-hidden"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => {
-        setPaused(false);
-        resetTimer();
-      }}
+      className="pt-10 sm:pt-12 md:pt-16 overflow-hidden"
     >
       {/* Heading */}
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -675,7 +708,11 @@ export function HowItWorks() {
       </div>
 
       {/* Tab bar */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 mt-10 md:mt-14">
+      <div
+        ref={tabBarRef}
+        className="max-w-7xl mx-auto px-6 lg:px-8 mt-10 md:mt-14"
+        style={{ scrollMarginTop: "88px" }}
+      >
         <div
           className="grid border-b border-[color:var(--color-border)]"
           style={{ gridTemplateColumns: `repeat(${TABS.length}, 1fr)` }}
@@ -696,7 +733,8 @@ export function HowItWorks() {
                     : "text-[color:var(--color-foreground-muted)] hover:text-[color:var(--color-foreground-secondary)]"
                 }`}
               >
-                {tab.label}
+                <span className="sm:hidden">{tab.shortLabel}</span>
+                <span className="hidden sm:inline">{tab.label}</span>
                 {isActive && (
                   <motion.span
                     layoutId="hiw-indicator"
@@ -731,28 +769,43 @@ export function HowItWorks() {
           aria-hidden="true"
         />
         <div className="relative max-w-7xl mx-auto px-6 lg:px-8 py-10 md:py-14">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`${activeTab}-${selectedIssue}`}
-              initial={reduce ? false : { opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={reduce ? undefined : { opacity: 0, y: -12 }}
-              transition={transition}
-            >
-              {activeTab === 0 && (
-                <DetectPanel
-                  issues={ISSUES}
-                  selectedIssue={selectedIssue}
-                  onSelectIssue={setSelectedIssue}
-                  onInvestigate={goToInvestigate}
-                />
-              )}
-              {activeTab === 1 && (
-                <InvestigatePanel issue={issue} onCreateTicket={goToAct} />
-              )}
-              {activeTab === 2 && <ActPanel issue={issue} />}
-            </motion.div>
-          </AnimatePresence>
+          {/*
+            panelRef + hover handlers live on THIS wrapper, not the whole
+            section. That way the auto-play timer only ticks when the
+            showcase itself is in view, and only pauses when the user is
+            hovering inside the white panel chrome.
+          */}
+          <div
+            ref={panelRef}
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => {
+              setPaused(false);
+              resetTimer();
+            }}
+          >
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`${activeTab}-${selectedIssue}`}
+                initial={reduce ? false : { opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={reduce ? undefined : { opacity: 0, y: -12 }}
+                transition={transition}
+              >
+                {activeTab === 0 && (
+                  <DetectPanel
+                    issues={ISSUES}
+                    selectedIssue={selectedIssue}
+                    onSelectIssue={setSelectedIssue}
+                    onInvestigate={goToInvestigate}
+                  />
+                )}
+                {activeTab === 1 && (
+                  <InvestigatePanel issue={issue} onCreateTicket={goToAct} />
+                )}
+                {activeTab === 2 && <ActPanel issue={issue} />}
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
       </div>
     </section>
@@ -1101,7 +1154,7 @@ function InvestigatePanel({
             Squash · Investigation
           </span>
         </div>
-        <span className="text-[10px] font-mono text-[color:var(--color-foreground-muted)]">
+        <span className="hidden lg:inline text-[10px] font-mono text-[color:var(--color-foreground-muted)]">
           {inv.durationLabel}
         </span>
       </div>
