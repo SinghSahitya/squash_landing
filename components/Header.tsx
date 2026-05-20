@@ -29,13 +29,18 @@ export function Header() {
     >
       <nav
         aria-label="Primary"
-        className="max-w-7xl mx-auto px-6 lg:px-8 h-16 flex items-center justify-between"
+        className="relative max-w-7xl mx-auto px-6 lg:px-8 h-16 flex items-center justify-between"
       >
         <Link href="/" className="flex items-center gap-2" aria-label="Squash home">
           <Logo className="h-7 w-auto" />
         </Link>
 
-        <ul className="hidden md:flex items-center gap-8">
+        {/*
+          Nav links are absolutely centered to the viewport (independent
+          of the logo / CTA widths on either side) so they always sit at
+          the visual midpoint regardless of how the side groups grow.
+        */}
+        <ul className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           {NAV_LINKS.map((link) => (
             <li key={link.href}>
               <a

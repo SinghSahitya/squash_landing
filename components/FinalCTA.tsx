@@ -43,7 +43,7 @@ export function FinalCTA() {
             href={`mailto:${FOUNDER_EMAIL}`}
             className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-white border border-[color:var(--color-border)] text-[color:var(--color-foreground)] font-medium text-sm hover:border-[color:var(--color-foreground)] transition-colors"
           >
-            Or email the founders → {FOUNDER_EMAIL}
+            Email the founders
           </a>
         </div>
 

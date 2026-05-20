@@ -47,8 +47,6 @@ type BGCard = {
   severity: "critical" | "warning" | "info";
   top: string;
   left: string;
-  mobileTop?: string;
-  mobileLeft?: string;
   rotation: number;
   driftDuration: number;
   driftAmount: number;
@@ -65,8 +63,6 @@ const BG_CARDS: BGCard[] = [
     severity: "critical",
     top: "6%",
     left: "1%",
-    mobileTop: "2%",
-    mobileLeft: "-4%",
     rotation: -2.5,
     driftDuration: 7,
     driftAmount: 5,
@@ -81,8 +77,6 @@ const BG_CARDS: BGCard[] = [
     severity: "critical",
     top: "5%",
     left: "71%",
-    mobileTop: "5%",
-    mobileLeft: "62%",
     rotation: 2,
     driftDuration: 8,
     driftAmount: 4,
@@ -97,8 +91,6 @@ const BG_CARDS: BGCard[] = [
     severity: "warning",
     top: "44%",
     left: "0%",
-    mobileTop: "35%",
-    mobileLeft: "-8%",
     rotation: 1.5,
     driftDuration: 9,
     driftAmount: 3,
@@ -112,8 +104,6 @@ const BG_CARDS: BGCard[] = [
     severity: "info",
     top: "42%",
     left: "77%",
-    mobileTop: "38%",
-    mobileLeft: "68%",
     rotation: -1.5,
     driftDuration: 8,
     driftAmount: 4,
@@ -128,8 +118,6 @@ const BG_CARDS: BGCard[] = [
     severity: "info",
     top: "78%",
     left: "2%",
-    mobileTop: "72%",
-    mobileLeft: "-4%",
     rotation: 2,
     driftDuration: 10,
     driftAmount: 3,
@@ -144,8 +132,6 @@ const BG_CARDS: BGCard[] = [
     severity: "warning",
     top: "74%",
     left: "73%",
-    mobileTop: "70%",
-    mobileLeft: "64%",
     rotation: -2,
     driftDuration: 6,
     driftAmount: 5,
@@ -510,6 +496,7 @@ function FeedbackElement({
           left: snippet.left,
           transform: `rotate(${snippet.rotation}deg)`,
           animation: `problem-snippet-float ${snippet.driftDuration}s ease-in-out ${index * 0.4}s infinite`,
+          willChange: "transform",
         }}
       >
         <p className="text-[10px] leading-snug text-[color:var(--color-foreground)] italic">
@@ -534,6 +521,7 @@ function FeedbackElement({
           left: snippet.left,
           transform: `rotate(${snippet.rotation}deg)`,
           animation: `problem-snippet-float ${snippet.driftDuration}s ease-in-out ${index * 0.3}s infinite`,
+          willChange: "transform",
         }}
       >
         <p className="text-[9px] text-[color:var(--color-foreground-muted)] uppercase tracking-wider font-medium">
@@ -562,6 +550,7 @@ function FeedbackElement({
         left: snippet.left,
         transform: `rotate(${snippet.rotation}deg)`,
         animation: `problem-snippet-float ${snippet.driftDuration}s ease-in-out ${index * 0.35}s infinite`,
+        willChange: "transform",
       }}
     >
       <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
@@ -624,6 +613,7 @@ function FloatingBGCard({
         left: card.left,
         rotate: card.rotation,
         opacity,
+        willChange: "opacity, transform",
       }}
     >
       <div
@@ -635,6 +625,7 @@ function FloatingBGCard({
               index * 0.4
             }s infinite`,
             transform: isActive ? "scale(1.04)" : "scale(0.97)",
+            willChange: "transform",
           } as React.CSSProperties
         }
       >
@@ -749,6 +740,7 @@ function NarrativeLine({
         opacity,
         y,
         scale,
+        willChange: "opacity, transform",
       }}
     >
       {text}
@@ -841,7 +833,10 @@ function ReducedMotionDesktop() {
    MOBILE — intersection-observer, stacked lines
    ═══════════════════════════════════════════════════════════════ */
 
-const MOBILE_CARD_INDICES = [0, 1, 4, 5];
+// Real signal cards shown as an intentional cluster on mobile — the
+// "data that was always there," piling up across every tool. Replaces
+// the faint, half-off-screen background cards we used before.
+const MOBILE_SIGNAL_INDICES = [0, 1, 2, 5];
 
 function MobileLayout({ reduce }: { reduce: boolean }) {
   return (
@@ -854,50 +849,6 @@ function MobileLayout({ reduce }: { reduce: boolean }) {
         }}
       />
       <div className="absolute inset-0 dot-bg opacity-20 pointer-events-none" />
-
-      {!reduce && (
-        <div
-          className="absolute inset-0 pointer-events-none"
-          aria-hidden="true"
-        >
-          {MOBILE_CARD_INDICES.map((ci, i) => {
-            const card = BG_CARDS[ci];
-            const integ = INTEGRATIONS.find((it) => it.name === card.name);
-            return (
-              <motion.div
-                key={card.name}
-                className="absolute w-[130px] sm:w-[150px] opacity-[0.18]"
-                style={{
-                  top: card.mobileTop ?? card.top,
-                  left: card.mobileLeft ?? card.left,
-                  rotate: card.rotation,
-                }}
-                animate={{ y: [0, -card.driftAmount, 0] }}
-                transition={{
-                  y: {
-                    repeat: Infinity,
-                    repeatType: "mirror",
-                    duration: card.driftDuration,
-                    ease: "easeInOut",
-                    delay: i * 0.6,
-                  },
-                }}
-              >
-                <ToolSignalCard
-                  name={card.name}
-                  signal={card.signal}
-                  detail={card.detail}
-                  badge={card.badge}
-                  time={card.time}
-                  severity={card.severity}
-                  color={integ?.color ?? "#7a7873"}
-                  slug={integ?.slug}
-                />
-              </motion.div>
-            );
-          })}
-        </div>
-      )}
 
       <div className="relative z-10 max-w-lg mx-auto px-6">
         <motion.p
@@ -929,6 +880,51 @@ function MobileLayout({ reduce }: { reduce: boolean }) {
           ))}
         </div>
 
+        {/* The signals themselves — the data that was always there,
+            scattered across every tool with nobody reviewing it. */}
+        <div className="mt-12 grid grid-cols-2 gap-x-3 gap-y-4">
+          {MOBILE_SIGNAL_INDICES.map((ci, i) => {
+            const card = BG_CARDS[ci];
+            const integ = INTEGRATIONS.find((it) => it.name === card.name);
+            return (
+              <motion.div
+                key={card.name}
+                initial={reduce ? false : { opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0, rotate: card.rotation }}
+                viewport={{ once: true, margin: "-30px" }}
+                transition={{
+                  duration: 0.55,
+                  delay: i * 0.08,
+                  ease: [0.25, 0.46, 0.45, 0.94],
+                }}
+                style={{ willChange: "transform" }}
+              >
+                <div
+                  className={reduce ? undefined : "problem-mobile-float"}
+                  style={
+                    {
+                      "--float-amount": `${card.driftAmount}px`,
+                      animationDuration: `${card.driftDuration}s`,
+                      animationDelay: `${i * 0.5}s`,
+                    } as React.CSSProperties
+                  }
+                >
+                  <ToolSignalCard
+                    name={card.name}
+                    signal={card.signal}
+                    detail={card.detail}
+                    badge={card.badge}
+                    time={card.time}
+                    severity={card.severity}
+                    color={integ?.color ?? "#7a7873"}
+                    slug={integ?.slug}
+                  />
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+
         <motion.p
           initial={reduce ? false : { opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -944,6 +940,19 @@ function MobileLayout({ reduce }: { reduce: boolean }) {
           not the data problem.
         </motion.p>
       </div>
+
+      <style>{`
+        @keyframes problem-mobile-float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(calc(var(--float-amount) * -1)); }
+        }
+        .problem-mobile-float {
+          animation-name: problem-mobile-float;
+          animation-timing-function: ease-in-out;
+          animation-iteration-count: infinite;
+          will-change: transform;
+        }
+      `}</style>
     </div>
   );
 }
